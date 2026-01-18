@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:MAUIBUDGET"
+             xmlns:views="clr-namespace:MAUIBUDGET.Views"
+             xmlns:viewModels="clr-namespace:MAUIBUDGET.ViewModels"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:mi="http://www.aathifmahir.com/dotnet/2022/maui/icons"
+             x:Class="MAUIBUDGET.AllExpensesView"
+             x:DataType="local:AllExpensesView"
+             x:Name="this"
+             Padding="5">
+    <ContentView.Resources>
+        <ResourceDictionary>
+            <views:PeriodToStringConverter x:Key="PeriodToStringConverter" />
+            <views:IntToColorConverter x:Key="IntToColorConverter" />
+            <toolkit:IsListNotNullOrEmptyConverter x:Key="IsListNotNullOrEmptyConverter" />
+            <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+        </ResourceDictionary>
+    </ContentView.Resources>
+    <Grid>
+        <VerticalStackLayout Spacing="5" Padding="0,10,0,0">
+            <VerticalStackLayout Padding="10,0,10,0" Spacing="5">
+                <HorizontalStackLayout Spacing="5">
+                    <RoundRectangle
+                    Fill="{Binding Category.Id, Converter={StaticResource IntToColorConverter}}" 
+                    StrokeThickness="0"
+                    WidthRequest="20"
+                    HeightRequest="20"
+                    CornerRadius="25"
+                    Margin="0,0,0,0"
+                    HorizontalOptions="Center" 
+                    VerticalOptions="Center" />
+                    <Label Text="{Binding Category.Name}" FontSize="Large"/>
+                </HorizontalStackLayout>
+
+                <Label IsVisible="{Binding Category.HasBudget}">
+                    <Label.Text>
+                        <MultiBinding StringFormat="{}Budget: {0} CZK per {1}.">
+                            <Binding Path="Budget" />
+                            <Binding Path="BudgetPeriod"/>
+                        </MultiBinding>
+                    </Label.Text>
+                </Label>
+
+                <Label Text="No Budget set." IsVisible="{Binding Category.HasBudget, Converter={StaticResource InvertedBoolConverter}} "/>
+
+            </VerticalStackLayout>
+
+            <BoxView HeightRequest="1" BackgroundColor="{StaticResource Gray200}" HorizontalOptions="Fill" 
+                     IsVisible="{Binding Expenses, Converter={StaticResource IsListNotNullOrEmptyConverter}}"/>
+
+            <VerticalStackLayout Padding="10,0,10,0" Spacing="5"
+                                 IsVisible="{Binding Expenses, Converter={StaticResource IsListNotNullOrEmptyConverter}}">
+                <CollectionView ItemsSource="{Binding LastExpenses}">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="viewModels:ExpenseViewModel">
+                            <Grid ColumnSpacing="10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <Label Text="{Binding Description}" Grid.Column="0" />
+                                <Label Text="{Binding Cost, StringFormat='{}{0:F0} CZK'}" Grid.Column="1" />
+                                <Label Text="{Binding Date, StringFormat='{}{0:dd/MM/yyyy}'}" Grid.Column="2"
+                            HorizontalOptions="End" />
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </VerticalStackLayout>
+            <Button Background="{StaticResource Gray100}"
+                Text="Collapse all expenses"
+                TextColor="{StaticResource Gray950}"
+                BorderWidth="0"
+                CornerRadius="0"
+                Padding="0"
+                Margin="0"
+                HeightRequest="25"
+                MinimumHeightRequest="25"/>
+        </VerticalStackLayout>
+    </Grid>
+</ContentView>

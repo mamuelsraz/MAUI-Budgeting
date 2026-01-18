@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewModels="clr-namespace:MAUIBUDGET.ViewModels"
+             x:Class="MAUIBUDGET.AddCategoryPage"
+             xmlns:controls="clr-namespace:MAUIBUDGET"
+             x:DataType="viewModels:AddCategoryPageViewModel" 
+             Title="Add Category">
+
+    <ContentPage.Resources>
+        <Style x:Key="InputLabelStyle" TargetType="Label">
+            <Setter Property="Grid.Column" Value="0" />
+            <Setter Property="VerticalOptions" Value="Center" />
+            <Setter Property="FontAttributes" Value="Bold" />
+        </Style>
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20,0,20,0" Spacing="20">
+            <controls:CategoryEditorView 
+                Category="{Binding CurrentCategory}" />
+            
+            <HorizontalStackLayout Spacing="10" HorizontalOptions="End">
+                <Button Text="Cancel"
+                        Command="{Binding CancelCategoryCreationCommand}"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource Secondary}, Dark={StaticResource SecondaryDarkText}}"/>
+                <Button Text="Add"
+                        Command="{Binding ConfirmCategoryCreationCommand}" />
+            </HorizontalStackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

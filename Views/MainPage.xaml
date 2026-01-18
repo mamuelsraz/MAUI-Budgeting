@@ -1,0 +1,251 @@
+﻿<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewModels="clr-namespace:MAUIBUDGET.ViewModels"
+             xmlns:views="clr-namespace:MAUIBUDGET.Views"
+             xmlns:models="clr-namespace:MAUIBUDGET.Models"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.Maui;assembly=LiveChartsCore.SkiaSharpView.Maui"
+             x:Class="MAUIBUDGET.MainPage"
+             x:DataType="viewModels:MainPageViewModel" >
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <views:EnumToBooleanConverter x:Key="EnumToBoolConverter" />
+            <views:IntToColorConverter x:Key="IntToColorConverter" />
+            <views:ViewPeriodToStringConverter x:Key="ViewPeriodToStringConverter" />
+            <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+
+            <!-- ControlTemplate that makes RadioButton look like a normal button -->
+            <ControlTemplate x:Key="ButtonRadioButtonTemplate">
+                <Border
+                    StrokeThickness="0"
+                    HorizontalOptions="Fill"
+                    Padding="10,5"
+                    StrokeShape="Rectangle" >
+                    <ContentPresenter 
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center" />
+                    <VisualStateManager.VisualStateGroups>
+                        <VisualStateGroupList>
+                            <VisualStateGroup x:Name="CheckedStates">
+                                <VisualState x:Name="Checked">
+                                    <VisualState.Setters>
+                                        <Setter Property="BackgroundColor" Value="{StaticResource Gray100}" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Unchecked">
+                                    <VisualState.Setters>
+                                        <Setter Property="BackgroundColor" Value="Transparent" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateGroupList>
+                    </VisualStateManager.VisualStateGroups>
+                </Border>
+            </ControlTemplate>
+
+            <!-- Style for RadioButton -->
+            <Style TargetType="RadioButton">
+                <Setter Property="ControlTemplate" Value="{StaticResource ButtonRadioButtonTemplate}" />
+            </Style>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+    <ScrollView>
+        <VerticalStackLayout Padding="10">
+            <Label Text="Welcome! /•᷅‎‎•᷄\੭" Style="{StaticResource Headline}" Margin="0,20,0,20"/>
+
+            <Grid ColumnDefinitions="*,1.1*"
+                  ColumnSpacing="10"
+                  HorizontalOptions="Fill" Margin="0,60,0,20">
+
+                <VerticalStackLayout VerticalOptions="Start" HorizontalOptions="Fill" Grid.Column="1">
+
+                    <Border BackgroundColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
+                            StrokeShape="RoundRectangle 8"
+                            StrokeThickness="0"
+                            Padding="10,1">
+                        <Label Text="{Binding SpentOverall, StringFormat='{0:F0} CZK'}"
+                               Style="{StaticResource Headline}"
+                               HorizontalTextAlignment="Start"
+                               TextColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource PrimaryDarkText}}"/>
+
+                    </Border>
+
+                    <Label Text="{Binding ViewPeriod, Converter={StaticResource ViewPeriodToStringConverter}}"
+                           Style="{StaticResource SubHeadline}"
+                           WidthRequest="140"
+                           HorizontalTextAlignment="Start"
+                           HorizontalOptions="Start"/>
+
+                </VerticalStackLayout>
+
+                <lvc:CartesianChart LegendPosition="Hidden"
+                                    HeightRequest="300"
+                                    MaximumWidthRequest="600"
+                                    HorizontalOptions="Fill"
+                                    Series="{Binding CategoriesSeries}"
+                                    DrawMargin="0,0,0,37"
+                                    Grid.Column="0"
+                                    Padding="0"
+                                    Margin="0">
+                    <lvc:CartesianChart.XAxes>
+                        <lvc:AxesCollection>
+                            <lvc:XamlAxis Labels="{Binding GraphLabels}"
+                                          LabelsRotation="0"
+                                          Position="Start"
+                                          SeparatorsPaint="{x:Null}"/>
+                        </lvc:AxesCollection>
+                    </lvc:CartesianChart.XAxes>
+                    <lvc:CartesianChart.YAxes>
+                        <lvc:AxesCollection>
+                            <lvc:XamlAxis IsVisible="False" IsInverted="False"/>
+                        </lvc:AxesCollection>
+                    </lvc:CartesianChart.YAxes>
+                </lvc:CartesianChart>
+            </Grid>
+
+            <Border>
+                <Grid ColumnDefinitions="*,*,*,1.1*"
+                      HorizontalOptions="Fill"
+                      VerticalOptions="Start">
+                    <RadioButton Content="This Week" GroupName="PeriodGroup" Grid.Column="0" IsChecked="{
+                    Binding ViewPeriod, 
+                    Mode=TwoWay, 
+                    Converter={StaticResource EnumToBoolConverter}, ConverterParameter={x:Static models:ViewPeriod.ThisWeek}}">
+                    </RadioButton>
+                    <RadioButton Content="This Month" GroupName="PeriodGroup" Grid.Column="1" IsChecked="{
+                    Binding ViewPeriod, 
+                    Mode=TwoWay, 
+                    Converter={StaticResource EnumToBoolConverter}, ConverterParameter={x:Static models:ViewPeriod.ThisMonth}}" />
+                    <RadioButton Content="Last 7 Days" GroupName="PeriodGroup" Grid.Column="2" IsChecked="{
+                    Binding ViewPeriod, 
+                    Mode=TwoWay, 
+                    Converter={StaticResource EnumToBoolConverter}, ConverterParameter={x:Static models:ViewPeriod.Last7Days}}" />
+                    <RadioButton Content="Last 30 Days" GroupName="PeriodGroup" Grid.Column="3" IsChecked="{
+                    Binding ViewPeriod, 
+                    Mode=TwoWay, 
+                    Converter={StaticResource EnumToBoolConverter}, ConverterParameter={x:Static models:ViewPeriod.Last30Days}}" />
+                </Grid>
+            </Border>
+            
+            <CollectionView ItemsSource="{Binding CategoryStatsList}" >
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="viewModels:CategoryStatsViewModel">
+                        <Grid ColumnDefinitions="0,*" RowDefinitions="*" Margin="0,20,0,20" ColumnSpacing="5">
+                            <BoxView Color="{StaticResource Gray200}"/>
+                            <VerticalStackLayout Grid.Column="1" HorizontalOptions="Fill">
+
+                            <!-- Category title -->
+                            <HorizontalStackLayout Spacing="5">
+                                <RoundRectangle 
+                                                Fill="{Binding Category.Id, Converter={StaticResource IntToColorConverter}}" 
+                                                StrokeThickness="0"
+                                                WidthRequest="20"
+                                                HeightRequest="20"
+                                                CornerRadius="25"
+                                                Margin="0,0,0,0"
+                                                HorizontalOptions="Center" 
+                                                VerticalOptions="Center" />
+                                <Label Text="{Binding Category.Name}" FontSize="Large"/>
+                            </HorizontalStackLayout>
+                            <lvc:CartesianChart
+                                HeightRequest="200"
+                                MaximumWidthRequest="600"
+                                HorizontalOptions="Fill"
+                                ZoomMode="None" 
+                                DrawMargin="20,10,50,20"
+                                SyncContext="{Binding Sync}"
+                                LegendTextSize="0" >
+                                <lvc:CartesianChart.XAxes>
+                                    <lvc:AxesCollection >
+                                        <lvc:XamlDateTimeAxis
+                                            DateFormatter="{Binding DateFormatter}"
+                                            TextSize="15"
+                                            NamePadding="0" >
+                                        </lvc:XamlDateTimeAxis>
+                                    </lvc:AxesCollection>
+                                </lvc:CartesianChart.XAxes>
+                                <lvc:CartesianChart.YAxes >
+                                    <lvc:AxesCollection>
+                                        <lvc:XamlAxis 
+                                            Position="End" 
+                                            TextSize="15" />
+                                    </lvc:AxesCollection>
+                                </lvc:CartesianChart.YAxes>
+
+                                <lvc:CartesianChart.Series>
+                                    <lvc:SeriesCollection>
+                                        <lvc:XamlLineSeries 
+                                            Values="{Binding ExpectedPoints}"
+                                            SeriesName="Expected"
+                                            Fill="None"
+                                            GeometrySize="5">
+                                            <lvc:XamlLineSeries.Stroke>
+                                                <lvc:SolidColorPaint Color="#6E6E6E" StrokeWidth="2"/>
+                                            </lvc:XamlLineSeries.Stroke>
+                                            <lvc:XamlLineSeries.GeometryStroke>
+                                                <lvc:SolidColorPaint StrokeWidth="0"/>
+                                            </lvc:XamlLineSeries.GeometryStroke>
+                                            <lvc:XamlLineSeries.GeometryFill>
+                                                <lvc:SolidColorPaint Color="#6E6E6E" StrokeWidth="1"/>
+                                            </lvc:XamlLineSeries.GeometryFill>
+                                        </lvc:XamlLineSeries>
+                                        <lvc:XamlLineSeries 
+                                            Values="{Binding ExpensePoints}"
+                                            SeriesName="Spent"
+                                            GeometrySize="7"
+                                            LineSmoothness="0"
+                                            GeometryStroke="{x:Null}"
+                                            GeometryFill="{Binding PointPaint}"
+                                            Stroke="{Binding LinePaint}"
+                                            Fill="{Binding FillPaint}"/>
+                                    </lvc:SeriesCollection>
+                                </lvc:CartesianChart.Series>
+
+                            </lvc:CartesianChart>
+
+                            <Grid ColumnDefinitions="*,*">
+                                <Label IsVisible="{Binding Category.HasBudget, Converter={StaticResource InvertedBoolConverter}}">
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="{Binding SpentOverall, StringFormat='{0:F0} CZK'}"
+                                                FontAttributes="Bold" />
+                                            <Span Text=" spent" />
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
+
+                                <Label IsVisible="{Binding Category.HasBudget}">
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="{Binding SpentOverall, StringFormat='{0:F0}/'}"
+                                                  FontAttributes="Bold" />
+                                            <Span Text="{Binding Budget, StringFormat='{0:F0} CZK'}"
+                                                  FontAttributes="Bold" />
+                                            <Span Text=" spent" />
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
+
+                                <Label x:Name="BudgetLabel" IsVisible="{Binding Category.HasBudget}"
+                                       Grid.Column="1"
+                                       HorizontalOptions="End"
+                                       HorizontalTextAlignment="End">
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="{Binding SpentPercent, StringFormat='{0:P0}'}"
+                                                  FontAttributes="Bold" />
+                                            <Span Text=" budget drained" />
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
+                            </Grid>
+                        </VerticalStackLayout>
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

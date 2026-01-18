@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell
+    x:Class="MAUIBUDGET.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:local="clr-namespace:MAUIBUDGET"
+    Title="MAUIBUDGET">
+
+    <TabBar>
+        <Tab Title="Home" Icon="home.png">
+            <ShellContent ContentTemplate="{DataTemplate local:MainPage}" Route="home" />
+        </Tab>
+
+        <Tab Title="Categories" Icon="categories.png">
+            <ShellContent ContentTemplate="{DataTemplate local:CategoriesPage}" Route="categories" />
+        </Tab>
+
+        <Tab Title="New Expense" Icon="add.png">
+            <ShellContent ContentTemplate="{DataTemplate local:AddExpensePage}" Route="newexpense" />
+        </Tab>
+    </TabBar>
+   
+</Shell>

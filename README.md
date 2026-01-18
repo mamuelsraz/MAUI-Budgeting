@@ -1,2 +1,6 @@
-# MAUI-Budgeting
-Simple budgeting app made with MAUI | MVVM
+\# JAK ROZBEHNOUT APLIKACI
+
+
+
+Pro testovani doporucuji zapnout aplikaci v Debug modu pro Android emulator.
+

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewModels="clr-namespace:MAUIBUDGET.ViewModels"
+             xmlns:local="clr-namespace:MAUIBUDGET"
+             x:Class="MAUIBUDGET.ExpenseEditorView" 
+             x:DataType="local:ExpenseEditorView"
+             x:Name="this" >
+    <ContentView.Resources>
+        <Style x:Key="InputLabelStyle" TargetType="Label">
+            <Setter Property="Grid.Column" Value="0" />
+            <Setter Property="VerticalOptions" Value="Center" />
+            <Setter Property="FontAttributes" Value="Bold" />
+        </Style>
+    </ContentView.Resources>
+
+    <Grid ColumnDefinitions="100,*"
+          RowDefinitions="Auto, Auto, Auto, Auto"
+          ColumnSpacing="0"
+          RowSpacing="10"
+          BindingContext="{x:Reference this}"
+          HorizontalOptions="Fill">
+
+        <!-- Description -->
+        <Label Grid.Row="0"
+               Text="Description"
+               Style="{StaticResource InputLabelStyle}" />
+
+        <Entry Grid.Row="0" Grid.Column="1"
+               Placeholder="20kg of dog food"
+               Text="{Binding Expense.Description, Mode=TwoWay}" />
+
+        <!-- Cost -->
+        <Label Grid.Row="1"
+               Text="Cost"
+               Style="{StaticResource InputLabelStyle}" />
+
+        <Entry Grid.Row="1" Grid.Column="1"
+               Placeholder="Price"
+               Keyboard="Numeric"
+               Text="{Binding Expense.Cost, Mode=TwoWay}" />
+
+        <!-- Date -->
+        <Label Grid.Row="2"
+               Text="Date"
+               Style="{StaticResource InputLabelStyle}" />
+
+        <DatePicker Grid.Row="2" Grid.Column="1"
+                    Date="{Binding Expense.Date, Mode=TwoWay}" />
+
+        <Picker Title="Category"
+                Grid.Row="3"
+                Grid.ColumnSpan="2"
+                ItemsSource="{Binding CategoryList}"
+                ItemDisplayBinding="{Binding Name}"
+                SelectedItem="{Binding SelectedCategory, Mode=TwoWay}" />
+
+    </Grid>
+</ContentView>

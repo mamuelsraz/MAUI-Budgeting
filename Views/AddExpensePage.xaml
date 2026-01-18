@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewModels="clr-namespace:MAUIBUDGET.ViewModels"
+             xmlns:controls="clr-namespace:MAUIBUDGET"
+             x:Class="MAUIBUDGET.AddExpensePage"
+             x:DataType="viewModels:AddExpensePageViewModel" >
+    <ScrollView>
+        <VerticalStackLayout Padding="10" Spacing="15">
+            <Label Text="Add Expense" Style="{StaticResource Headline}"/>
+            <controls:ExpenseEditorView Expense="{Binding CurrentExpense, Mode=TwoWay}"
+                                        CategoryList="{Binding Categories}"
+                                        SelectedCategory="{Binding SelectedCategory, Mode=TwoWay}"/>
+
+            <HorizontalStackLayout Spacing="10" HorizontalOptions="End">
+                <Button Text="Cancel"
+                        Command="{Binding CancelExpenseCreationCommand}" 
+                        BackgroundColor="{AppThemeBinding Light={StaticResource Secondary}, Dark={StaticResource SecondaryDarkText}}"/>
+                <Button Text="Add"
+                        Command="{Binding ConfirmExpenseCreationCommand}" />
+            </HorizontalStackLayout>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
