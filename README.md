@@ -20,7 +20,7 @@ Simple android-targeting budgeting app made with MAUI.
 
 - [LiveCharts2](https://livecharts.dev/) to plot expenses
 - [LiteDB](https://github.com/litedb-org/LiteDB) to store data on-device
-- Follows the MVVM design pattern through Bindings
+- Follows the MVVM design pattern through Bindings, Commands ect.
 
 ## Missing features
 
