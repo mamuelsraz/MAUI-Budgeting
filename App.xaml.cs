@@ -5,16 +5,15 @@ using Plugin.LocalNotification;
 using Plugin.LocalNotification.Core.Models;
 using Plugin.LocalNotification.EventArgs;
 using System.Diagnostics;
-using System.Text.RegularExpressions;
 
 namespace MAUIBUDGET
 {
     public partial class App : Application
     {
         static string walletPackageName = "com.google.android.apps.walletnfcrel";
-        static string regexMatch = @"\w*?(\d+\.?\d*).*";
 
         private ExpensesService expensesService;
+        private TaskCompletionSource<Shell> shellReady = CreateShellReadySource();
 
         public App(INotificationManager notificationManager, ExpensesService expensesService)
         {
@@ -25,6 +24,9 @@ namespace MAUIBUDGET
             LocalNotificationCenter.Current.NotificationActionTapped += OnNotificationActionTapped;
         }
 
+        private static TaskCompletionSource<Shell> CreateShellReadySource() =>
+            new TaskCompletionSource<Shell>(TaskCreationOptions.RunContinuationsAsynchronously);
+
         private void OnNotificationReceived(object sender, AppNotification incomingNotification)
         {
             if (incomingNotification.PackageName != walletPackageName)
@@ -33,37 +35,19 @@ namespace MAUIBUDGET
                 return;
             }
 
-            //if (incomingNotification.PackageName == AppInfo.PackageName)
-            //{
-            //    Debug.WriteLine("Notification not from the wallet, returning!");
-            //    return;
-            //}
+            double? cost = AmountParser.Parse(incomingNotification.Description);
+            if (cost == null)
+            {
+                Debug.WriteLine("No amount found in the wallet notification, skipping: " + incomingNotification.Description);
+                return;
+            }
 
             ExpenseViewModel expense = new ExpenseViewModel()
             {
                 Date = incomingNotification.Timestamp,
                 Description = incomingNotification.Title,
-                Cost = 0
+                Cost = cost.Value
             };
-
-            Match m = Regex.Match(incomingNotification.Description, regexMatch);
-            if (m.Success && m.Groups.Count >= 2)
-            {
-                string s = m.Groups[1].Value;
-                Debug.WriteLine("Found string " + s);
-                if (double.TryParse(s, System.Globalization.CultureInfo.InvariantCulture, out var parsedCost))
-                {
-                    expense.Cost = parsedCost;
-                }
-                else
-                {
-                    Debug.WriteLine($"Couldnt parse string {s} into a double");
-                }
-            }
-            else
-            {
-                Debug.WriteLine("$Couldnt find a match in the description string: " + incomingNotification.Description);
-            }
 
             int id = expensesService.PushNotificationExpense(expense);
 
@@ -111,6 +95,7 @@ namespace MAUIBUDGET
         private async Task HandleCategory(NotificationRequest request, int index)
         {
             var expense = expensesService.PopNotificationExpense(request.NotificationId);
+            LocalNotificationCenter.Current.Cancel(request.NotificationId);
 
             if (expense != null)
             {
@@ -129,27 +114,47 @@ namespace MAUIBUDGET
             }
             else
                 Debug.WriteLine($"Expense with id {request.NotificationId} not found in notif expenses.");
-
-            LocalNotificationCenter.Current.Cancel(request.NotificationId);
         }
 
         private async Task HandleCategoryOther(NotificationRequest request)
         {
             Expense? expense = expensesService.PopNotificationExpense(request.NotificationId);
-
-            if (expense != null)
-            {
-                await Shell.Current.GoToAsync($"//newexpense?description={expense.Description}");
-            }
-            else
-                Debug.WriteLine($"Expense with id {request.NotificationId} not found in notif expenses.");
-
             LocalNotificationCenter.Current.Cancel(request.NotificationId);
+
+            if (expense == null)
+            {
+                Debug.WriteLine($"Expense with id {request.NotificationId} not found in notif expenses.");
+                return;
+            }
+
+            var parameters = new ShellNavigationQueryParameters
+            {
+                { "description", expense.Description },
+                { "cost", expense.Cost },
+                { "date", expense.Date.ToLocalTime() }
+            };
+
+            Shell shell = await shellReady.Task;
+            await MainThread.InvokeOnMainThreadAsync(() => shell.GoToAsync("//newexpense", parameters));
         }
 
         protected override Window CreateWindow(IActivationState? activationState)
         {
-            return new Window(new AppShell());
+            if (shellReady.Task.IsCompleted)
+                shellReady = CreateShellReadySource();
+
+            var ready = shellReady;
+            var shell = new AppShell();
+            shell.Loaded += (_, _) => ready.TrySetResult(shell);
+
+            var window = new Window(shell);
+            window.Destroying += (_, _) =>
+            {
+                if (shellReady == ready && ready.Task.IsCompleted)
+                    shellReady = CreateShellReadySource();
+            };
+
+            return window;
         }
     }
 }

@@ -30,6 +30,9 @@ namespace MAUIBUDGET.Platforms.Android
 
         private void OnAndroidNotificationReceived(object sender, global::Android.Service.Notification.StatusBarNotification sbn)
         {
+            if (IsGroupSummaryOrOngoing(sbn))
+                return;
+
             var data = ConvertToAppNotification(sbn);
             NotificationReceived?.Invoke(this, data);
         }
@@ -40,29 +43,39 @@ namespace MAUIBUDGET.Platforms.Android
             NotificationRemoved?.Invoke(this, data);
         }
 
-        // Helper to extract clean data from the messy Android object
+        private static bool IsGroupSummaryOrOngoing(global::Android.Service.Notification.StatusBarNotification sbn)
+        {
+            if (sbn.IsOngoing)
+                return true;
+
+            var flags = sbn.Notification?.Flags ?? 0;
+            return flags.HasFlag(global::Android.App.NotificationFlags.GroupSummary);
+        }
+
         private AppNotification ConvertToAppNotification(global::Android.Service.Notification.StatusBarNotification sbn)
         {
             string title = "";
             string text = "";
-            string package = sbn.PackageName;
             try
             {
-                var extras = sbn.Notification.Extras;
-                title = extras?.GetString(global::Android.App.Notification.ExtraTitle) ?? "";
-                text = extras?.GetString(global::Android.App.Notification.ExtraText) ?? "";
+                var extras = sbn.Notification?.Extras;
+                title = extras?.GetCharSequence(global::Android.App.Notification.ExtraTitle) ?? "";
+                text = extras?.GetCharSequence(global::Android.App.Notification.ExtraText) ?? "";
+
+                if (string.IsNullOrWhiteSpace(text))
+                    text = extras?.GetCharSequence(global::Android.App.Notification.ExtraBigText) ?? "";
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Handle parsing errors gracefully
+                System.Diagnostics.Debug.WriteLine($"Couldnt read notification extras: {ex.Message}");
             }
 
             return new AppNotification
             {
                 Title = title,
                 Description = text,
-                Timestamp = DateTime.Now,
-                PackageName = package
+                Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(sbn.PostTime).LocalDateTime,
+                PackageName = sbn.PackageName ?? ""
             };
         }
     }
