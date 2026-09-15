@@ -5,6 +5,7 @@ using MAUIBUDGET.ViewModels;
 using MauiIcons.Material;
 using Microsoft.Extensions.Logging;
 using Plugin.LocalNotification;
+using Plugin.LocalNotification.Core.Models;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 
 namespace MAUIBUDGET

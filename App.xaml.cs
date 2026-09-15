@@ -2,6 +2,7 @@
 using MAUIBUDGET.Services;
 using MAUIBUDGET.ViewModels;
 using Plugin.LocalNotification;
+using Plugin.LocalNotification.Core.Models;
 using Plugin.LocalNotification.EventArgs;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
