@@ -15,7 +15,7 @@ namespace MAUIBUDGET.Models
                     return 1d;
 
                 case Period.WorkDay:
-                    return 1d / (5d / 7d);
+                    return 5d / 7d;
 
                 case Period.Week:
                     return 1d / 7d;
@@ -47,7 +47,7 @@ namespace MAUIBUDGET.Models
                     return now.Date.AddDays(-6);
 
                 case ViewPeriod.Last30Days:
-                    return now.Date.AddDays(-30);
+                    return now.Date.AddDays(-29);
             }
         }
 

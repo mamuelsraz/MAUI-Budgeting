@@ -5,11 +5,10 @@ using MAUIBUDGET.Models;
 using MAUIBUDGET.Services;
 using SkiaSharp;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 
 namespace MAUIBUDGET.ViewModels
 {
-    public class CategoryStatsViewModel : ObservableObject, IDisposable
+    public class CategoryStatsViewModel : ObservableObject
     {
         private ExpensesService expensesService;
         private MainPageViewModel mainPageViewModel;
@@ -42,6 +41,13 @@ namespace MAUIBUDGET.ViewModels
             set => SetProperty(ref budget, value);
         }
 
+        private bool hasValidBudget;
+        public bool HasValidBudget
+        {
+            get => hasValidBudget;
+            set => SetProperty(ref hasValidBudget, value);
+        }
+
         private double spentPercent;
         public double SpentPercent
         {
@@ -60,7 +66,6 @@ namespace MAUIBUDGET.ViewModels
             this.mainPageViewModel = mainPageViewModel;
 
             Category = category;
-            Category.PropertyChanged += OnCategoryPropertyChanged;
 
             SKColor color = Utils.ColorToSKColor(Utils.GetCategoryColorFromInt(category.Id));
 
@@ -99,10 +104,15 @@ namespace MAUIBUDGET.ViewModels
             OnPropertyChanging(nameof(ExpectedPoints));
             lock (Sync)
             {
-                if (category.HasBudget)
+                if (HasValidBudget)
                 {
                     ExpectedPoints[0] = (new DateTimePoint(startDate, 0));
                     ExpectedPoints[1] = (new DateTimePoint(endDate, Budget));
+                }
+                else
+                {
+                    ExpectedPoints[0] = new();
+                    ExpectedPoints[1] = new();
                 }
 
                 double overallCost = 0;
@@ -126,27 +136,25 @@ namespace MAUIBUDGET.ViewModels
             var dbExpenses = expensesService.GetExpensesInCategory(Category.Id, startDate, endDate).OrderBy(x => x.Date);
 
             SpentOverall = Math.Round(dbExpenses.Sum(x => x.Cost));
-            if (category.HasBudget)
+            if (Category.HasBudget)
             {
                 Budget = Math.Round(Category.BudgetPerDay * period.TotalDays);
-                SpentPercent = Math.Round(SpentOverall / Budget, 2);
+                HasValidBudget = Budget > 0;
             }
-            else SpentPercent = -999f;
+            else HasValidBudget = false;
+
+            if (HasValidBudget)
+                SpentPercent = Math.Round(SpentOverall / Budget, 2);
+            else
+            {
+                Budget = 0;
+                SpentPercent = -999f;
+            }
 
             _ = UpdateGraphs(dbExpenses, startDate, endDate, period);
         }
 
-        private void OnCategoryPropertyChanged(object? sender, PropertyChangedEventArgs e)
-        {
-            GenerateStats();
-        }
-
         public Func<DateTime, string> DateFormatter { get; set; } =
             date => date.ToString("dd.MM");
-
-        public void Dispose()
-        {
-            Category?.PropertyChanged -= OnCategoryPropertyChanged;
-        }
     }
 }

@@ -10,7 +10,13 @@ namespace MAUIBUDGET.Services
     {
         public ObservableCollection<CategoryViewModel> Categories { get; private set; } = new();
 
+        public event Action<int>? Changed;
+
         string dbPath => Path.Combine(FileSystem.AppDataDirectory, "app.db");
+
+        const string NextNotificationIdKey = "NextNotificationId";
+
+        readonly LiteDatabase db;
 
         public ExpensesService()
         {
@@ -20,6 +26,8 @@ namespace MAUIBUDGET.Services
                 File.Delete(dbPath);
             }
 #endif
+            db = new LiteDatabase(dbPath);
+
             CheckOrCreateDB();
             LoadCategories();
 #if DEBUG
@@ -31,39 +39,37 @@ namespace MAUIBUDGET.Services
         {
             Debug.WriteLine("Creating DB at " + dbPath);
 
-            using (var db = new LiteDatabase(dbPath))
+            ILiteCollection<Category> categories = db.GetCollection<Category>("categories");
+            ILiteCollection<Expense> expenses = db.GetCollection<Expense>("expenses");
+            ILiteCollection<Expense> notifExpenses = db.GetCollection<Expense>("notif_expenses");
+
+            categories.EnsureIndex(c => c.Name);
+            categories.EnsureIndex(c => c.HasBudget);
+            categories.EnsureIndex(c => c.Budget);
+            categories.EnsureIndex(c => c.BudgetPeriod);
+            categories.EnsureIndex(c => c.Name);
+
+            expenses.EnsureIndex(e => e.Description);
+            expenses.EnsureIndex(e => e.Date);
+            expenses.EnsureIndex(e => e.Cost);
+            expenses.EnsureIndex(e => e.CategoryId);
+
+            notifExpenses.EnsureIndex(e => e.Description);
+            notifExpenses.EnsureIndex(e => e.Date);
+            notifExpenses.EnsureIndex(e => e.Cost);
+
+            if (!categories.Exists(Query.All()))
             {
-                ILiteCollection<Category> categories = db.GetCollection<Category>("categories");
-                ILiteCollection<Expense> expenses = db.GetCollection<Expense>("expenses");
-                ILiteCollection<Expense> notifExpenses = db.GetCollection<Expense>("notif_expenses");
-
-                categories.EnsureIndex(c => c.Name);
-                categories.EnsureIndex(c => c.HasBudget);
-                categories.EnsureIndex(c => c.Budget);
-                categories.EnsureIndex(c => c.BudgetPeriod);
-                categories.EnsureIndex(c => c.Name);
-
-                expenses.EnsureIndex(e => e.Description);
-                expenses.EnsureIndex(e => e.Date);
-                expenses.EnsureIndex(e => e.Cost);
-                expenses.EnsureIndex(e => e.CategoryId);
-
-                notifExpenses.EnsureIndex(e => e.Description);
-                notifExpenses.EnsureIndex(e => e.Date);
-                notifExpenses.EnsureIndex(e => e.Cost);
-
-                if (!categories.Exists(Query.All())) // No categories present, create sample categories
-                {
-                    categories.Insert(new Category { Name = "Lunch", HasBudget = true, Budget = 150, BudgetPeriod = Period.WorkDay });
-                    categories.Insert(new Category { Name = "Transport", HasBudget = true, Budget = 2000, BudgetPeriod = Period.Month });
-                    categories.Insert(new Category { Name = "Other", HasBudget = false });
-                }
+                categories.Insert(new Category { Name = "Lunch", HasBudget = true, Budget = 150, BudgetPeriod = Period.WorkDay });
+                categories.Insert(new Category { Name = "Transport", HasBudget = true, Budget = 2000, BudgetPeriod = Period.Month });
+                categories.Insert(new Category { Name = "Other", HasBudget = false });
             }
         }
 
         void CreateDummyData()
         {
             Random rnd = new Random();
+            List<Expense> dummyExpenses = new();
 
             foreach (var category in Categories)
             {
@@ -80,53 +86,38 @@ namespace MAUIBUDGET.Services
                     double spent = ((budget / 3) + rnd.NextDouble() * budget*2) / t.TotalDays;
                     date -= t;
 
-                    using (var db = new LiteDatabase(dbPath))
+                    dummyExpenses.Add(new Expense
                     {
-                        ILiteCollection<Expense> expenses = db.GetCollection<Expense>("expenses");
-                        expenses.Insert(new Expense
-                        {
-                            Description = "Dummy Expense",
-                            Cost = spent,
-                            Date = date.ToUniversalTime(),
-                            CategoryId = category.Id,
-                        });
-                    }
+                        Description = "Dummy Expense",
+                        Cost = spent,
+                        Date = date.ToUniversalTime(),
+                        CategoryId = category.Id,
+                    });
                 }
             }
+
+            db.GetCollection<Expense>("expenses").InsertBulk(dummyExpenses);
 
             LoadCategories();
         }
 
-        public void LoadCategories()
+        void LoadCategories()
         {
             Categories.Clear();
 
             List<CategoryViewModel> tempCategories = new List<CategoryViewModel>();
 
-            using (var db = new LiteDatabase(dbPath))
+            ILiteCollection<Category> categoryCollection = db.GetCollection<Category>("categories");
+
+            var dbCategories = categoryCollection.FindAll();
+            foreach (var category in dbCategories)
             {
-                ILiteCollection<Category> categoryCollection = db.GetCollection<Category>("categories");
-                ILiteCollection<Expense> expensesCollection = db.GetCollection<Expense>("expenses");
+                Debug.WriteLine($"Loading category {category.Name} from DB.");
 
-                var dbCategories = categoryCollection.FindAll();
-                foreach (var category in dbCategories)
-                {
-                    Debug.WriteLine($"Loading category {category.Name} from DB.");
+                CategoryViewModel categoryViewModel = new CategoryViewModel(category);
+                RefreshLastExpenses(categoryViewModel);
 
-                    CategoryViewModel categoryViewModel = new CategoryViewModel(category);
-
-                    var dbLastExpenses = expensesCollection
-                        .Find(Query.EQ("CategoryId", category.Id))
-                        .OrderByDescending(x => x.Date)
-                        .Take(3);
-
-                    foreach (var expense in dbLastExpenses)
-                    {
-                        categoryViewModel.LastExpenses.Add(new ExpenseViewModel(expense));
-                    }
-
-                    tempCategories.Add(categoryViewModel);
-                }
+                tempCategories.Add(categoryViewModel);
             }
 
             foreach (var item in tempCategories)
@@ -135,23 +126,36 @@ namespace MAUIBUDGET.Services
             }
         }
 
+        void RefreshLastExpenses(CategoryViewModel category)
+        {
+            var dbLastExpenses = db.GetCollection<Expense>("expenses")
+                .Find(Query.EQ("CategoryId", category.Id))
+                .OrderByDescending(x => x.Date)
+                .Take(3)
+                .ToList();
+
+            category.LastExpenses.Clear();
+            foreach (var expense in dbLastExpenses)
+            {
+                category.LastExpenses.Add(new ExpenseViewModel(expense));
+            }
+        }
+
         public void AddCategory(CategoryViewModel category)
         {
-            using (var db = new LiteDatabase(dbPath))
-            {
-                ILiteCollection<Category> categories = db.GetCollection<Category>("categories");
+            ILiteCollection<Category> categories = db.GetCollection<Category>("categories");
 
-                int id = categories.Insert(new Category
-                {
-                    Name = category.Name,
-                    HasBudget = category.HasBudget,
-                    Budget = category.Budget,
-                    BudgetPeriod = category.BudgetPeriod
-                }).AsInt32;
-                category.Id = id;
-            }
+            int id = categories.Insert(new Category
+            {
+                Name = category.Name,
+                HasBudget = category.HasBudget,
+                Budget = category.Budget,
+                BudgetPeriod = category.BudgetPeriod
+            }).AsInt32;
+            category.Id = id;
 
             Categories.Add(category);
+            Changed?.Invoke(category.Id);
         }
 
         public void DeleteCategory(int categoryID)
@@ -160,16 +164,14 @@ namespace MAUIBUDGET.Services
             if (category == null)
                 throw new InvalidDataException("Category is not valid");
 
-            using (var db = new LiteDatabase(dbPath))
-            {
-                ILiteCollection<Category> categories = db.GetCollection<Category>("categories");
-                categories.Delete(categoryID);
+            ILiteCollection<Category> categories = db.GetCollection<Category>("categories");
+            categories.Delete(categoryID);
 
-                ILiteCollection<Expense> expenses = db.GetCollection<Expense>("expenses");
-                expenses.DeleteMany(Query.EQ("CategoryId", categoryID));
-            }
+            ILiteCollection<Expense> expenses = db.GetCollection<Expense>("expenses");
+            expenses.DeleteMany(Query.EQ("CategoryId", categoryID));
 
             Categories.Remove(category);
+            Changed?.Invoke(categoryID);
         }
 
         public void EditCategory(int categoryID, CategoryViewModel newCategory)
@@ -180,72 +182,87 @@ namespace MAUIBUDGET.Services
             if (editedCategory.Id != categoryID)
                 throw new InvalidDataException("Category has invalid ID");
 
-            using (var db = new LiteDatabase(dbPath))
+            ILiteCollection<Category> categories = db.GetCollection<Category>("categories");
+            Category dbCategory = new Category()
             {
-                ILiteCollection<Category> categories = db.GetCollection<Category>("categories");
-                Category dbCategory = new Category()
-                {
-                    Id = categoryID,
-                    Name = newCategory.Name,
-                    HasBudget = newCategory.HasBudget,
-                    Budget = newCategory.Budget,
-                    BudgetPeriod = newCategory.BudgetPeriod
-                };
-                categories.Update(categoryID, dbCategory);
-            }
+                Id = categoryID,
+                Name = newCategory.Name,
+                HasBudget = newCategory.HasBudget,
+                Budget = newCategory.Budget,
+                BudgetPeriod = newCategory.BudgetPeriod
+            };
+            categories.Update(categoryID, dbCategory);
 
             editedCategory.Name = newCategory.Name;
             editedCategory.HasBudget = newCategory.HasBudget;
             editedCategory.Budget = newCategory.Budget;
             editedCategory.BudgetPeriod = newCategory.BudgetPeriod;
+
+            Changed?.Invoke(categoryID);
         }
 
         public void AddExpense(ExpenseViewModel expense, CategoryViewModel category)
         {
-            if (!Categories.Contains(category))
-                throw new InvalidDataException("Category is not valid");
+            var target = Categories.FirstOrDefault(c => c.Id == category.Id)
+                ?? throw new InvalidDataException("Category is not valid");
 
-            using (var db = new LiteDatabase(dbPath))
+            ILiteCollection<Expense> expenses = db.GetCollection<Expense>("expenses");
+            expenses.Insert(new Expense
             {
-                ILiteCollection<Expense> expenses = db.GetCollection<Expense>("expenses");
-                expenses.Insert(new Expense
-                {
-                    Description = expense.Description,
-                    Cost = expense.Cost,
-                    Date = expense.Date.ToUniversalTime(),
-                    CategoryId = category.Id,
-                });
-            }
+                Description = expense.Description,
+                Cost = expense.Cost,
+                Date = expense.Date.ToUniversalTime(),
+                CategoryId = target.Id,
+            });
 
-            LoadCategories();
+            RefreshLastExpenses(target);
+            Changed?.Invoke(target.Id);
         }
 
         public int PushNotificationExpense(ExpenseViewModel expense)
         {
-            int id = -1;
-            using (var db = new LiteDatabase(dbPath))
+            db.BeginTrans();
+            try
             {
+                ILiteCollection<BsonDocument> meta = db.GetCollection("meta");
                 ILiteCollection<Expense> notifExpenses = db.GetCollection<Expense>("notif_expenses");
-                id = notifExpenses.Insert(new Expense
+
+                BsonDocument? counter = meta.FindById(NextNotificationIdKey);
+                int id;
+                if (counter == null)
                 {
+                    id = notifExpenses.Count() == 0 ? 1 : notifExpenses.Max(x => x.Id) + 1;
+                    if (id <= 0)
+                        id = 1;
+                }
+                else id = counter["value"].AsInt32;
+
+                int next = id == int.MaxValue ? 1 : id + 1;
+                meta.Upsert(new BsonDocument { ["_id"] = NextNotificationIdKey, ["value"] = next });
+
+                notifExpenses.Insert(new Expense
+                {
+                    Id = id,
                     Description = expense.Description,
                     Cost = expense.Cost,
                     Date = expense.Date.ToUniversalTime(),
                 });
-            }
 
-            return id;
+                db.Commit();
+                return id;
+            }
+            catch
+            {
+                db.Rollback();
+                throw;
+            }
         }
 
         public Expense? PopNotificationExpense(int id)
         {
-            Expense? expense = null;
-            using (var db = new LiteDatabase(dbPath))
-            {
-                ILiteCollection<Expense> expenses = db.GetCollection<Expense>("notif_expenses");
-                expense = expenses.FindById(id);
-                expenses.Delete(id);
-            }
+            ILiteCollection<Expense> expenses = db.GetCollection<Expense>("notif_expenses");
+            Expense? expense = expenses.FindById(id);
+            expenses.Delete(id);
 
             return expense;
         }
@@ -254,15 +271,13 @@ namespace MAUIBUDGET.Services
         {
             fromDate = fromDate.ToUniversalTime();
             toDate = toDate.ToUniversalTime();
-            using (var db = new LiteDatabase(dbPath))
-            {
-                ILiteCollection<Expense> expensesCollection = db.GetCollection<Expense>("expenses");
 
-                return expensesCollection
-                    .Find(Query.And(Query.EQ("CategoryId", categoryId), Query.Between("Date", fromDate, toDate)))
-                    .OrderBy(x => x.Date)
-                    .ToList();
-            }
+            ILiteCollection<Expense> expensesCollection = db.GetCollection<Expense>("expenses");
+
+            return expensesCollection
+                .Find(Query.And(Query.EQ("CategoryId", categoryId), Query.Between("Date", fromDate, toDate)))
+                .OrderBy(x => x.Date)
+                .ToList();
         }
 
         public double GetOverallSpendingInPeriod(DateTime fromDate, DateTime toDate)
@@ -270,14 +285,11 @@ namespace MAUIBUDGET.Services
             fromDate = fromDate.ToUniversalTime();
             toDate = toDate.ToUniversalTime();
 
-            using (var db = new LiteDatabase(dbPath))
-            {
-                ILiteCollection<Expense> expensesCollection = db.GetCollection<Expense>("expenses");
+            ILiteCollection<Expense> expensesCollection = db.GetCollection<Expense>("expenses");
 
-                return expensesCollection
-                    .Find(Query.Between("Date", fromDate, toDate))
-                    .Sum(x => x.Cost);
-            }
+            return expensesCollection
+                .Find(Query.Between("Date", fromDate, toDate))
+                .Sum(x => x.Cost);
         }
     }
 }

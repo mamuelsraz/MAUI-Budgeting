@@ -19,13 +19,18 @@ namespace MAUIBUDGET.ViewModels
         public CategoryViewModel? SelectedCategory
         {
             get => selectedCategory;
-            set => SetProperty(ref selectedCategory, value);
+            set
+            {
+                if (SetProperty(ref selectedCategory, value))
+                    confirmExpenseCreationCommand?.NotifyCanExecuteChanged();
+            }
         }
 
         public ObservableCollection<CategoryViewModel> Categories => expensesService.Categories;
 
         public ICommand CancelExpenseCreationCommand { get; }
-        public ICommand ConfirmExpenseCreationCommand { get; }
+        private readonly AsyncRelayCommand confirmExpenseCreationCommand;
+        public ICommand ConfirmExpenseCreationCommand => confirmExpenseCreationCommand;
 
         private readonly ExpensesService expensesService;
 
@@ -35,12 +40,13 @@ namespace MAUIBUDGET.ViewModels
             currentExpense = new ExpenseViewModel();
             ResetCurrentExpense();
             CancelExpenseCreationCommand = new AsyncRelayCommand(CancelExpenseCreation);
-            ConfirmExpenseCreationCommand = new AsyncRelayCommand(ConfirmExpenseCreation);
+            confirmExpenseCreationCommand = new AsyncRelayCommand(ConfirmExpenseCreation, () => SelectedCategory != null);
         }
 
         private void ResetCurrentExpense()
         {
             CurrentExpense = new ExpenseViewModel() { Description = "", Date = DateTime.Now, Cost = 0 };
+            SelectedCategory = null;
         }
 
         private async Task CancelExpenseCreation()
@@ -51,10 +57,10 @@ namespace MAUIBUDGET.ViewModels
 
         private async Task ConfirmExpenseCreation()
         {   
-            if (selectedCategory == null)
-                throw new NullReferenceException("Category cannot be null");
+            if (SelectedCategory == null)
+                return;
 
-            expensesService.AddExpense(CurrentExpense, SelectedCategory!);
+            expensesService.AddExpense(CurrentExpense, SelectedCategory);
             
             ResetCurrentExpense();
             await Shell.Current.GoToAsync("//home");

@@ -18,6 +18,9 @@ namespace MAUIBUDGET
 
             this.notificationManager = notificationManager;
             BindingContext = viewModel;
+
+            Loaded += (_, _) => viewModel.Attach();
+            Unloaded += (_, _) => viewModel.Detach();
         }
 
         protected override async void OnAppearing()
