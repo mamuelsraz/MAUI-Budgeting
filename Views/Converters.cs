@@ -6,13 +6,14 @@ using System.Globalization;
 
 namespace MAUIBUDGET.Views
 {
-    public class PeriodToStringConverter : BaseConverterOneWay<Period, string>
+    public class PeriodToStringConverter : IValueConverter
     {
-        public override string DefaultConvertReturnValue { get; set; } = "ERR_DEFAULT";
-
-        public override string ConvertFrom(Period value, CultureInfo? culture)
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            switch (value)
+            if (value is not Period period)
+                return "ERR_DEFAULT";
+
+            switch (period)
             {
                 case Period.Unset:
                     return "ERR_UNSET";
@@ -27,6 +28,11 @@ namespace MAUIBUDGET.Views
                 default:
                     return "ERR_DEFAULT";
             }
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotSupportedException();
         }
     }
 

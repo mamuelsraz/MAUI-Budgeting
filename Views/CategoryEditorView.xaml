@@ -2,10 +2,13 @@
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:MAUIBUDGET"
+             xmlns:views="clr-namespace:MAUIBUDGET.Views"
+             xmlns:models="clr-namespace:MAUIBUDGET.Models"
              x:Class="MAUIBUDGET.CategoryEditorView"
              x:DataType="local:CategoryEditorView"
              x:Name="this" >
     <ContentView.Resources>
+        <views:PeriodToStringConverter x:Key="PeriodToStringConverter" />
         <Style x:Key="InputLabelStyle" TargetType="Label">
             <Setter Property="Grid.Column" Value="0" />
             <Setter Property="VerticalOptions" Value="Center" />
@@ -62,7 +65,11 @@
                         ItemsSource="{Binding PeriodValues}"
                         SelectedItem="{Binding Category.BudgetPeriod, Mode=TwoWay}"
                         VerticalOptions="Center"
-                        HorizontalOptions="Fill"/>
+                        HorizontalOptions="Fill">
+                <Picker.ItemDisplayBinding>
+                    <Binding Path="." x:DataType="models:Period" Converter="{StaticResource PeriodToStringConverter}" />
+                </Picker.ItemDisplayBinding>
+            </Picker>
         </Grid>
     </Grid>
 </ContentView>

@@ -38,7 +38,7 @@
                     <Label.Text>
                         <MultiBinding StringFormat="{}Budget: {0} CZK per {1}.">
                             <Binding Path="Budget" />
-                            <Binding Path="BudgetPeriod"/>
+                            <Binding Path="BudgetPeriod" Converter="{StaticResource PeriodToStringConverter}"/>
                         </MultiBinding>
                     </Label.Text>
                 </Label>
