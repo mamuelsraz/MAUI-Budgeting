@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using MAUIBUDGET.Models;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Windows.Input;
 
 namespace MAUIBUDGET.ViewModels
@@ -47,12 +48,15 @@ namespace MAUIBUDGET.ViewModels
 
         public ObservableCollection<ExpenseViewModel> LastExpenses { get; } = new ObservableCollection<ExpenseViewModel>();
 
+        public bool HasLastExpenses => LastExpenses.Count > 0;
+
         public ICommand EditCategoryCommand { get; }
         public ICommand ViewAllExpensesCommand { get; }
 
         public CategoryViewModel(Category dbCategory)
         {
             name = dbCategory.Name;
+            LastExpenses.CollectionChanged += OnLastExpensesChanged;
 
             Id = dbCategory.Id;
             Name = dbCategory.Name;
@@ -66,6 +70,7 @@ namespace MAUIBUDGET.ViewModels
 
         public CategoryViewModel() {
             name = "";
+            LastExpenses.CollectionChanged += OnLastExpensesChanged;
             Id = -1;
 
             Name = "";
@@ -75,6 +80,11 @@ namespace MAUIBUDGET.ViewModels
 
             EditCategoryCommand = new AsyncRelayCommand(EditCategory);
             ViewAllExpensesCommand = new AsyncRelayCommand(ViewAllExpenses);
+        }
+
+        private void OnLastExpensesChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            OnPropertyChanged(nameof(HasLastExpenses));
         }
 
         public async Task EditCategory()
