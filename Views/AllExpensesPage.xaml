@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:MAUIBUDGET"
+             xmlns:views="clr-namespace:MAUIBUDGET.Views"
+             xmlns:viewModels="clr-namespace:MAUIBUDGET.ViewModels"
+             xmlns:mi="http://www.aathifmahir.com/dotnet/2022/maui/icons"
+             x:Class="MAUIBUDGET.AllExpensesPage"
+             x:DataType="viewModels:AllExpensesPageViewModel"
+             BackgroundColor="#80000000"
+             Shell.PresentationMode="ModalNotAnimated"
+             Shell.NavBarIsVisible="False">
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <views:IntToColorConverter x:Key="IntToColorConverter" />
+            <Style x:Key="PagingButton" TargetType="Button">
+                <Setter Property="Background" Value="{StaticResource Gray100}" />
+                <Setter Property="TextColor" Value="{StaticResource Gray950}" />
+                <Setter Property="BorderWidth" Value="0" />
+                <Setter Property="CornerRadius" Value="0" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="Margin" Value="0" />
+                <Setter Property="HeightRequest" Value="25" />
+                <Setter Property="MinimumHeightRequest" Value="25" />
+            </Style>
+            <Style x:Key="PagingLine" TargetType="BoxView">
+                <Setter Property="HeightRequest" Value="1" />
+                <Setter Property="HorizontalOptions" Value="Fill" />
+                <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray500}}" />
+            </Style>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+    <Grid>
+        <BoxView Color="Transparent" BackgroundColor="Transparent">
+            <BoxView.GestureRecognizers>
+                <TapGestureRecognizer Command="{Binding CloseCommand}" />
+            </BoxView.GestureRecognizers>
+        </BoxView>
+
+        <Border Margin="20,40"
+                VerticalOptions="Center"
+                BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource OffBlack}}">
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer />
+            </Border.GestureRecognizers>
+            <Grid RowDefinitions="Auto,*">
+                <VerticalStackLayout Grid.Row="0" Spacing="5" Padding="0,10,0,0">
+                    <Grid Padding="10,0,10,0">
+                        <HorizontalStackLayout Spacing="5" VerticalOptions="Center">
+                            <RoundRectangle
+                                Fill="{Binding Category.Id, Converter={StaticResource IntToColorConverter}}"
+                                StrokeThickness="0"
+                                WidthRequest="20"
+                                HeightRequest="20"
+                                CornerRadius="25"
+                                HorizontalOptions="Center"
+                                VerticalOptions="Center" />
+                            <Label Text="{Binding Category.Name}" FontSize="Large" VerticalOptions="Center"/>
+                        </HorizontalStackLayout>
+                        <Button ImageSource="{mi:Material Close, IconSize=Large, IconColor={StaticResource Gray500}}"
+                                BackgroundColor="Transparent"
+                                Padding="0"
+                                CornerRadius="10"
+                                MinimumHeightRequest="40"
+                                MinimumWidthRequest="40"
+                                HorizontalOptions="End"
+                                VerticalOptions="Center"
+                                Command="{Binding CloseCommand}"/>
+                    </Grid>
+                    <BoxView HeightRequest="1" BackgroundColor="{StaticResource Gray200}" HorizontalOptions="Fill" />
+                </VerticalStackLayout>
+
+                <CollectionView x:Name="ExpensesList" Grid.Row="1" ItemsSource="{Binding Expenses}">
+                    <CollectionView.Header>
+                        <VerticalStackLayout>
+                            <VerticalStackLayout IsVisible="{Binding HasPreviousPage}">
+                                <Button Style="{StaticResource PagingButton}"
+                                        Text="Back"
+                                        Command="{Binding PreviousPageCommand}"/>
+                                <BoxView Style="{StaticResource PagingLine}" />
+                            </VerticalStackLayout>
+                        </VerticalStackLayout>
+                    </CollectionView.Header>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="viewModels:ExpenseViewModel">
+                            <local:ExpenseRowView />
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                    <CollectionView.EmptyView>
+                        <Label Text="No expenses yet."
+                               TextColor="{StaticResource Gray500}"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center"
+                               Margin="0,20" />
+                    </CollectionView.EmptyView>
+                    <CollectionView.Footer>
+                        <VerticalStackLayout>
+                            <VerticalStackLayout IsVisible="{Binding HasNextPage}">
+                                <BoxView Style="{StaticResource PagingLine}" />
+                                <Button Style="{StaticResource PagingButton}"
+                                        Text="Next"
+                                        Command="{Binding NextPageCommand}"/>
+                            </VerticalStackLayout>
+                        </VerticalStackLayout>
+                    </CollectionView.Footer>
+                </CollectionView>
+            </Grid>
+        </Border>
+    </Grid>
+</ContentPage>

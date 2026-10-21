@@ -8,6 +8,7 @@
 
             Routing.RegisterRoute("newcategory", typeof(AddCategoryPage));
             Routing.RegisterRoute("editcategory", typeof(EditCategoryPage));
+            Routing.RegisterRoute("expenses", typeof(AllExpensesPage));
         }
     }
 }

@@ -75,6 +75,8 @@ namespace MAUIBUDGET
             builder.Services.AddTransient<CategoryPageViewModel>();
             builder.Services.AddTransient<AddExpensePageViewModel>();
             builder.Services.AddTransient<AddCategoryPageViewModel>();
+            builder.Services.AddTransient<AllExpensesPageViewModel>();
+            builder.Services.AddTransient<AllExpensesPage>();
             return builder.Build();
         }
     }

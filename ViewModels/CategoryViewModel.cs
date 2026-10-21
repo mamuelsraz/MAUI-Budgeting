@@ -94,7 +94,7 @@ namespace MAUIBUDGET.ViewModels
 
         public async Task ViewAllExpenses()
         {
-            await Shell.Current.GoToAsync("expenses");
+            await Shell.Current.GoToAsync($"expenses?categoryId={this.Id}");
         }
     }
 }

@@ -280,6 +280,17 @@ namespace MAUIBUDGET.Services
                 .ToList();
         }
 
+        public List<Expense> GetExpensesInCategoryPage(int categoryId, int skip, int take)
+        {
+            return db.GetCollection<Expense>("expenses")
+                .Find(Query.EQ("CategoryId", categoryId))
+                .OrderByDescending(x => x.Date)
+                .ThenByDescending(x => x.Id)
+                .Skip(skip)
+                .Take(take)
+                .ToList();
+        }
+
         public double GetOverallSpendingInPeriod(DateTime fromDate, DateTime toDate)
         {
             fromDate = fromDate.ToUniversalTime();
