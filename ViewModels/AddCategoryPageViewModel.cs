@@ -80,6 +80,10 @@ namespace MAUIBUDGET.ViewModels
 
         private async Task DeleteCategory()
         {
+            bool ok = await Shell.Current.DisplayAlertAsync("Delete category", $"Delete \"{CurrentCategory.Name}\" and all its expenses?", "Delete", "Cancel");
+            if (!ok)
+                return;
+
             expensesService.DeleteCategory(CurrentCategory.Id);
 
             ResetCurrentCategory();

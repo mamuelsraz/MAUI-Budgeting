@@ -1,8 +1,10 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using MAUIBUDGET.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Windows.Input;
 
 namespace MAUIBUDGET.ViewModels
 {
@@ -40,6 +42,13 @@ namespace MAUIBUDGET.ViewModels
             set => SetProperty(ref description, value);
         }
 
+        private int categoryId;
+        public int CategoryId
+        {
+            get => categoryId;
+            set => SetProperty(ref categoryId, value);
+        }
+
         private bool isAlternate;
         public bool IsAlternate
         {
@@ -47,9 +56,12 @@ namespace MAUIBUDGET.ViewModels
             set => SetProperty(ref isAlternate, value);
         }
 
+        public ICommand EditExpenseCommand { get; }
+
         public ExpenseViewModel()
         {
             description = "";
+            EditExpenseCommand = new AsyncRelayCommand(EditExpense);
         }
 
         public ExpenseViewModel(Expense expense)
@@ -60,6 +72,14 @@ namespace MAUIBUDGET.ViewModels
             Date = expense.Date.ToLocalTime();
             Cost = expense.Cost;
             Description = expense.Description;
+            CategoryId = expense.CategoryId;
+
+            EditExpenseCommand = new AsyncRelayCommand(EditExpense);
+        }
+
+        public async Task EditExpense()
+        {
+            await Shell.Current.GoToAsync($"editexpense?id={this.Id}");
         }
     }
 }

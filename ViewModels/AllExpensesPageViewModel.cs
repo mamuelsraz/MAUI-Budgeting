@@ -67,6 +67,9 @@ namespace MAUIBUDGET.ViewModels
 
         public void SetCategoryByID(int id)
         {
+            if (Category != null && Category.Id == id)
+                return;
+
             var found = expensesService.Categories.FirstOrDefault(x => x.Id == id);
             if (found == null)
             {

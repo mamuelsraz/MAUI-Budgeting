@@ -4,11 +4,12 @@
              xmlns:viewModels="clr-namespace:MAUIBUDGET.ViewModels"
              xmlns:controls="clr-namespace:MAUIBUDGET"
              x:Class="MAUIBUDGET.AddExpensePage"
-             x:DataType="viewModels:AddExpensePageViewModel" >
+             x:DataType="viewModels:ExpensePageViewModel" >
     <ScrollView>
         <VerticalStackLayout Padding="10" Spacing="15">
             <Label Text="Add Expense" Style="{StaticResource Headline}"/>
-            <controls:ExpenseEditorView Expense="{Binding CurrentExpense, Mode=TwoWay}"
+            <controls:ExpenseEditorView x:Name="Editor"
+                                        Expense="{Binding CurrentExpense, Mode=TwoWay}"
                                         CategoryList="{Binding Categories}"
                                         SelectedCategory="{Binding SelectedCategory, Mode=TwoWay}"/>
 

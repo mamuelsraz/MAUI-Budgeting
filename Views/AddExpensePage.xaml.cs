@@ -4,13 +4,20 @@ namespace MAUIBUDGET;
 
 public partial class AddExpensePage : ContentPage, IQueryAttributable
 {
-    AddExpensePageViewModel viewModel;
+    ExpensePageViewModel viewModel;
 
-    public AddExpensePage(AddExpensePageViewModel viewModel)
+    public AddExpensePage(ExpensePageViewModel viewModel)
     {
         InitializeComponent();
         BindingContext = viewModel; // To be able to inject services
         this.viewModel = viewModel;
+        viewModel.Leaving += Editor.HideKeyboard;
+    }
+
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        Editor.HideKeyboard();
     }
 
     public void ApplyQueryAttributes(IDictionary<string, object> query)
@@ -22,6 +29,6 @@ public partial class AddExpensePage : ContentPage, IQueryAttributable
             viewModel.CurrentExpense.Cost = cost;
 
         if (query.TryGetValue("date", out var dateObj) && dateObj is DateTime date)
-            viewModel.CurrentExpense.Date = date;
+            viewModel.SetDate(date);
     }
 }

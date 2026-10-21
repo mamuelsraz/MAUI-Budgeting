@@ -26,7 +26,8 @@
                Text="Description"
                Style="{StaticResource InputLabelStyle}" />
 
-        <Entry Grid.Row="0" Grid.Column="1"
+        <Entry x:Name="DescriptionEntry"
+               Grid.Row="0" Grid.Column="1"
                Placeholder="20kg of dog food"
                Text="{Binding Expense.Description, Mode=TwoWay}" />
 
@@ -35,7 +36,8 @@
                Text="Cost"
                Style="{StaticResource InputLabelStyle}" />
 
-        <Entry Grid.Row="1" Grid.Column="1"
+        <Entry x:Name="CostEntry"
+               Grid.Row="1" Grid.Column="1"
                Placeholder="Price"
                Keyboard="Numeric"
                Text="{Binding Expense.Cost, Mode=TwoWay}" />

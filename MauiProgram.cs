@@ -73,7 +73,7 @@ namespace MAUIBUDGET
             builder.Services.AddSingleton<ExpensesService>();
             builder.Services.AddTransient<MainPageViewModel>();
             builder.Services.AddTransient<CategoryPageViewModel>();
-            builder.Services.AddTransient<AddExpensePageViewModel>();
+            builder.Services.AddTransient<ExpensePageViewModel>();
             builder.Services.AddTransient<AddCategoryPageViewModel>();
             builder.Services.AddTransient<AllExpensesPageViewModel>();
             builder.Services.AddTransient<AllExpensesPage>();

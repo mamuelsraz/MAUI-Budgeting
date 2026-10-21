@@ -1,3 +1,4 @@
+using CommunityToolkit.Maui.Core.Platform;
 using CommunityToolkit.Mvvm.ComponentModel;
 using MAUIBUDGET.ViewModels;
 
@@ -45,5 +46,15 @@ public partial class ExpenseEditorView : ContentView
     public ExpenseEditorView()
     {
         InitializeComponent();
+    }
+
+    public void HideKeyboard()
+    {
+        foreach (var entry in new[] { DescriptionEntry, CostEntry })
+        {
+            if (entry.Handler != null)
+                _ = entry.HideKeyboardAsync(CancellationToken.None);
+            entry.Unfocus();
+        }
     }
 }

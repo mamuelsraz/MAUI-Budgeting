@@ -219,6 +219,57 @@ namespace MAUIBUDGET.Services
             Changed?.Invoke(target.Id);
         }
 
+        public Expense? GetExpense(int id)
+        {
+            return db.GetCollection<Expense>("expenses").FindById(id);
+        }
+
+        public void UpdateExpense(ExpenseViewModel expense, CategoryViewModel category)
+        {
+            var target = Categories.FirstOrDefault(c => c.Id == category.Id)
+                ?? throw new InvalidDataException("Category is not valid");
+
+            ILiteCollection<Expense> expenses = db.GetCollection<Expense>("expenses");
+            Expense existing = expenses.FindById(expense.Id)
+                ?? throw new InvalidDataException("Expense is not valid");
+            int oldCategoryId = existing.CategoryId;
+
+            expenses.Update(new Expense
+            {
+                Id = expense.Id,
+                Description = expense.Description,
+                Cost = expense.Cost,
+                Date = expense.Date.ToUniversalTime(),
+                CategoryId = target.Id,
+            });
+
+            RefreshLastExpenses(target);
+            var oldCategory = oldCategoryId != target.Id
+                ? Categories.FirstOrDefault(c => c.Id == oldCategoryId)
+                : null;
+            if (oldCategory != null)
+                RefreshLastExpenses(oldCategory);
+
+            if (oldCategoryId != target.Id)
+                Changed?.Invoke(oldCategoryId);
+            Changed?.Invoke(target.Id);
+        }
+
+        public void DeleteExpense(int id)
+        {
+            ILiteCollection<Expense> expenses = db.GetCollection<Expense>("expenses");
+            Expense? existing = expenses.FindById(id);
+            if (existing == null)
+                return;
+
+            expenses.Delete(id);
+
+            var category = Categories.FirstOrDefault(c => c.Id == existing.CategoryId);
+            if (category != null)
+                RefreshLastExpenses(category);
+            Changed?.Invoke(existing.CategoryId);
+        }
+
         public int PushNotificationExpense(ExpenseViewModel expense)
         {
             db.BeginTrans();
