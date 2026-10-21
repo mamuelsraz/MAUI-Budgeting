@@ -135,9 +135,9 @@ namespace MAUIBUDGET.Services
                 .ToList();
 
             category.LastExpenses.Clear();
-            foreach (var expense in dbLastExpenses)
+            for (int i = 0; i < dbLastExpenses.Count; i++)
             {
-                category.LastExpenses.Add(new ExpenseViewModel(expense));
+                category.LastExpenses.Add(new ExpenseViewModel(dbLastExpenses[i]) { IsAlternate = i % 2 == 1 });
             }
         }
 

@@ -40,6 +40,13 @@ namespace MAUIBUDGET.ViewModels
             set => SetProperty(ref description, value);
         }
 
+        private bool isAlternate;
+        public bool IsAlternate
+        {
+            get => isAlternate;
+            set => SetProperty(ref isAlternate, value);
+        }
+
         public ExpenseViewModel()
         {
             description = "";

@@ -125,9 +125,9 @@ namespace MAUIBUDGET.ViewModels
             }
 
             Expenses.Clear();
-            foreach (var expense in items.Take(PageSize))
+            for (int i = 0; i < Math.Min(items.Count, PageSize); i++)
             {
-                Expenses.Add(new ExpenseViewModel(expense));
+                Expenses.Add(new ExpenseViewModel(items[i]) { IsAlternate = i % 2 == 1 });
             }
 
             HasNextPage = items.Count > PageSize;

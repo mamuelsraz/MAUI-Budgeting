@@ -5,6 +5,11 @@
              x:Class="MAUIBUDGET.ExpenseRowView"
              x:DataType="viewModels:ExpenseViewModel"
              Padding="10,5,10,5">
+    <ContentView.Triggers>
+        <DataTrigger TargetType="ContentView" Binding="{Binding IsAlternate}" Value="True">
+            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource Gray50}, Dark={StaticResource Gray900}}" />
+        </DataTrigger>
+    </ContentView.Triggers>
     <Grid ColumnSpacing="10">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
